@@ -39,39 +39,46 @@ const getUserNamefromId = (id) => {
 const getExercisesFromId = (id) => {
   return exerciseData.filter(item => item._id == id)
 }
+function isValidDate(d) {
+  return d instanceof Date && !isNaN(d);
+}
+
 app.post('/api/users', (req, res) => {
   const userName = req.body.username
-  console.log("No estaa");
   const object = {
     username: userName,
     _id: new ObjectID().toString()
   }
   userData.push(object)
-  console.log(userData);
   res.send(object)
 }
 )
 
 app.post('/api/users/:_id/exercises', (req, res) => {
   const id = req.params._id
-  console.log(id);
-  console.log(getUserNamefromId(id));
   if (isIdInUserData(req.params._id)) {
+  
+    let dateTime = new Date(req.body.date)
+    if(!isValidDate(dateTime)){
+      dateTime = new Date()
+    }
     const object = {
       _id: id,
       username: getUserNamefromId(id),
-      date: new Date(req.body.date).toDateString(),
+      date: dateTime.toDateString(),
       duration: +req.body.duration,
       description: req.body.description,
     }
     exerciseData.push(object)
-    console.log(object);
     res.send(object)
   }
 })
 
-app.get('/api/users/:_id/logs', (req, res) => {
+app.get('/api/users', (req, res) => {
+  res.send(userData)
+})
 
+app.get('/api/users/:_id/logs', (req, res) => {
   const limit = req.query.limit
   const forQuery = req.query.for
   const toQuery = req.query.to
@@ -83,7 +90,7 @@ app.get('/api/users/:_id/logs', (req, res) => {
     logs.push({
       description: item.description,
       duration: item.duration,
-      date: item.date
+      date: new Date(item.date).toDateString()
     })
   })
 
@@ -93,20 +100,18 @@ app.get('/api/users/:_id/logs', (req, res) => {
   }
   if (toQuery !== undefined) {
     const toDate = new Date(toQuery)
-    logs = logs.filter(item => new Date(item.date) > toDate)
+    logs = logs.filter(item => new Date(item.date) < toDate)
   }
 
   if (limit == !undefined && limit < logs.length) {
     logs = logs.slice(0, limit)
   }
   const object = {
+    _id: id,
     userName: getUserNamefromId(id),
     count: logs.length,
-    _id: id,
     log: logs
   }
-  console.log(req.query);
-
   res.send(object)
 })
 
